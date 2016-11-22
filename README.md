@@ -6,9 +6,9 @@ MIT License
 
 Info
 ========
-Wikiget retrieves a list of article names from Wikipedia.
+Wikiget retrieves a list of article names from Wikipedia from the Unix command-line.
 
-When working with AWB or bots on Wikipedia a list of target article names is often needed. The list might be from categories, backlinks from an article 
+When working with AWB or bots on Wikipedia, a list of target article names is often useful. The list might be from categories, backlinks from an article 
 or template, or articles edited by a username. The API has all this available, but a simple command-line tool saves time and effort.
 
 	Wikiget - command-line access to some Wikimedia API functions
