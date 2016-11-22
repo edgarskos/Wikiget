@@ -8,8 +8,8 @@ Info
 ========
 Wikiget retrieves a list of article names from Wikipedia.
 
-Anyone working with AWB or bots on Wikipedia will often find they need a list of target article names. These might be from categories, backlinks from an 
-article or template, or articles edited by a username. The API makes all this available, but a simple command-line tool will save time and effort.
+When working with AWB or bots on Wikipedia a list of target article names is often needed. The list might be from categories, backlinks from an article 
+or template, or articles edited by a username. The API has all this available, but a simple command-line tool saves time and effort.
 
 	Wikiget - command-line access to some Wikimedia API functions
 
@@ -72,8 +72,6 @@ Set executable: chmod 750 wikiget
 Change the first shebang line to location of GNU Awk 4.+ (default: /usr/bin/awk)
 
 Change the "Contact" line to your Wikipedia Username
-
-The script will search in the path for and use one of the following respectively: wget, curl or lynx
 
 Credits
 ==================

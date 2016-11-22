@@ -29,12 +29,12 @@
 
 BEGIN {
 
-  Contact = "User:Green_Cardamom (en)"                        # Your contact info - informational only, API Agent string
+  Contact = "User:<username> (en.wikipedia.org)"              # Your contact info - informational only for API Agent string
   G["program"] = "Wikiget"
   G["version"] = "0.1"
   G["agent"] = Program " " G["version"] " " Contact
-  G["maxlag"] = "5"                                           # Wikimedia API max lag (default)
-  G["lang"] = "en"                                            # Wikipedia language (default)
+  G["maxlag"] = "5"                                           # Wikimedia API max lag default
+  G["lang"] = "en"                                            # Wikipedia language default
                                  
   setup("wget curl lynx")                                     # Use wget, curl or lynx - searching PATH in this order
   Optind = Opterr = 1 
