@@ -6,12 +6,13 @@ MIT License
 
 Info
 ========
-Wikiget retrieves a list of article names from Wikipedia from the Unix command-line.
+Wikiget is a Unix command-line tool to retrieve a list of article names from Wikipedia.
 
-When working with AWB or bots on Wikipedia, a list of target article names is often useful. The list might be from categories, backlinks from an article 
-or template, or articles edited by a username. The API has all this available, but a simple command-line tool saves time and effort.
+When working with AWB or bots on Wikipedia, a list of target article names is often needed. For example all articles in a category, articles that use a 
+template (backlinks), or articles edited by a username (user contributions). The API has this available, but a simple command-line tool saves 
+programming effot.
 
-	Wikiget - command-line access to some Wikimedia API functions
+	Wikiget - command-line retrieval of article names from Wikipedia
 
 	Usage:
 
@@ -69,7 +70,7 @@ Optionally create a sym-link eg. ln -s wikiget.awk wikiget
 
 Set executable: chmod 750 wikiget
 
-Change the first shebang line to location of GNU Awk 4.+ (default: /usr/bin/awk)
+Change the first line (default: /usr/bin/awk) to location of GNU Awk 4+
 
 Change the "Contact" line to your Wikipedia Username
 
