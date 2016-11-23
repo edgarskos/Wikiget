@@ -1,11 +1,5 @@
 Wikiget
 ===================
-by User:Green Cardamom (en.wikipedia.org)
-November 2016
-MIT License
-
-Info
-========
 Wikiget is a Unix command-line tool to retrieve a list of article names from Wikipedia.
 
 When working with AWB or bots on Wikipedia, a list of target article names is often needed. For example all articles in a category, articles that use a 
@@ -76,6 +70,13 @@ Change the "Contact" line to your Wikipedia Username
 
 Credits
 ==================
+by User:Green Cardamom (en.wikipedia.org)
+
+November 2016
+
+MIT License
+
 Want to use MediaWiki API with Awk? Check out 'MediaWiki Awk API Library'
+
 https://github.com/greencardamom/MediaWikiAwkAPI
 
