@@ -1,7 +1,12 @@
-#!/usr/bin/awk -bE
+#!/usr/local/bin/awk -bE
 
 #
 # Wikiget - command-line access to some Wikimedia API functions
+#
+
+#
+# 0.2 Nov 26 - added -t and -q 
+# 0.1 Nov 24 - initial release
 #
 
 # The MIT License (MIT)
@@ -29,9 +34,9 @@
 
 BEGIN {
 
-  Contact = "User:<username> (en.wikipedia.org)"              # Your contact info - informational only for API Agent string
+  Contact = "User:<your_wp_username> (en)"                    # Your contact info - informational only for API Agent string
   G["program"] = "Wikiget"
-  G["version"] = "0.1"
+  G["version"] = "0.2"
   G["agent"] = Program " " G["version"] " " Contact
   G["maxlag"] = "5"                                           # Wikimedia API max lag default
   G["lang"] = "en"                                            # Wikipedia language default
@@ -50,7 +55,7 @@ BEGIN {
 #
 function parsecommandline(c, opts) {
 
-  while ((c = getopt(ARGC, ARGV, "hVfps:e:u:m:b:l:n:w:c:")) != -1) {
+  while ((c = getopt(ARGC, ARGV, "hVfps:e:u:m:b:l:n:w:c:t:q:")) != -1) {
       opts++
       if(c == "h") {
         usage()
@@ -62,10 +67,16 @@ function parsecommandline(c, opts) {
         Arguments["main"] = verifyval(Optarg)
         Arguments["main_c"] = "b"
       }
+      if(c == "t") {               #  -t <types>      Types of backlinks ( -t "ntf" )
+        Arguments["bltypes"] = verifyval(Optarg)
+      }
 
       if(c == "c") {               #  -b <entity>     List articles in a category ( -c "Category:1900 births" )
         Arguments["main"] = verifyval(Optarg)
         Arguments["main_c"] = "c"
+      }
+      if(c == "q") {               #  -q <types>      Types of links in a category ( -t "psf" )
+        Arguments["cattypes"] = verifyval(Optarg)
       }
 
       if(c == "u") {               #  -u <username>   User contributions ( -u "User:Green Cardamom")
@@ -107,7 +118,7 @@ function parsecommandline(c, opts) {
 #
 # Process arguments
 #
-function processarguments() {
+function processarguments(  c,a,i) {
 
   if(Arguments["lang"])                                     # options
     G["lang"] = Arguments["lang"]
@@ -125,6 +136,35 @@ function processarguments() {
     G["plaintext"] = "false"
   if(Arguments["plaintext"] == "true")
     G["plaintext"] = "true"
+
+  if(length(Arguments["bltypes"]) > 0) {
+    if(Arguments["bltypes"] !~ /[^ntf]/) {    # ie. contains only those letters
+      c = split(Arguments["bltypes"], a, "")
+      while(i++ < c) 
+        G["bltypes"] = G["bltypes"] a[i]
+    }
+    else {
+      print "Invalid \"-t\" value(s)"
+      exit
+    }
+  }
+  else
+    G["bltypes"] = "ntf"
+
+  if(length(Arguments["cattypes"]) > 0) {
+    if(Arguments["cattypes"] !~ /[^psf]/) {    # ie. contains only those letters
+      c = split(Arguments["cattypes"], a, "")
+      while(i++ < c) 
+        G["cattypes"] = G["cattypes"] a[i]
+    }
+    else {
+      print "Invalid \"-q\" value(s)"
+      exit
+    }
+  }
+  else
+    G["cattypes"] = "p"
+
 
   if(Arguments["main_c"] == "b") {                          # backlinks
     if ( entity_exists(Arguments["main"]) ) {
@@ -175,6 +215,7 @@ function usage() {
   print ""
   print " Backlinks:"
   print "       -b <name>        Backlinks for article, template, userpage, etc.."
+  print "         -t <types>     (option) 1-3 letter string of types of backlinks: n(ormal)t(ranscluded)f(ile). Default: \"ntf\", See -h for more info "
   print ""
   print " User contributions:"
   print "       -u <username>    User contributions"
@@ -184,6 +225,7 @@ function usage() {
   print ""
   print " Category list:"
   print "       -c <category>    List articles in a category"
+  print "         -q <types>     (option) 1-3 letter string of types of links: p(age)s(ubcat)f(ile). Default: \"p\", See -h for more info "
   print ""
   print " Print wiki text:"
   print "       -w <article>     Print wiki text of article"
@@ -201,9 +243,11 @@ function usage_extended() {
   print "Examples:"
   print ""
   print " Backlinks:"
-  print "   wikiget -b \"Template:Project Gutenberg\""
-  print "   wikiget -b \"User:Jimbo Wales\""
-  print "   wikiget -b \"Paris (Idaho)\" -l fr  (show backlinks for article \"Paris (Idaho)\" on the French Wiki)"
+  print "   wikiget -b \"User:Jimbo Wales\"                                  (backlinks for a User: showing all link types (\"ntf\"))"
+  print "   wikiget -b \"User:Jimbo Wales\" -t nt                            (backlinks for a User: showing normal and transcluded links)"                                 
+  print "   wikiget -b \"Template:Gutenberg author\" -t t                    (backlinks for a Template: showing transcluded links)"
+  print "   wikiget -b \"File:Justforyoucritter.jpg\" -t f                   (backlinks for a File: showing file links)"
+  print "   wikiget -b \"Paris (Idaho)\" -l fr                               (backlinks for article \"Paris (Idaho)\" on the French Wiki)"
   print ""
   print " User contributions:"
   print "   wikiget -u \"User:Jimbo Wales\" -s 20010910 -e 20010912          (show all edits from 9/10-9/12 on 2001)"  
@@ -214,7 +258,9 @@ function usage_extended() {
   print "   -n codes: https://www.mediawiki.org/wiki/Extension_default_namespaces"
   print ""
   print " Category list:"
-  print "   wikiget -c \"Category:1900 births\"        (list articles in category)"
+  print "   wikiget -c \"Category:1900 births\"              (list pages in a category)"
+  print "   wikiget -c \"Category:Dead people\" -q s         (list subcats in a category)"
+  print "   wikiget -c \"Category:Dead people\" -q sp        (list subcats and pages in a category)"
   print ""
   print " Print wiki text:"
   print "   wikiget -w \"Paris\" -p                    (print wiki text of article \"Paris\" on the English Wiki)"
@@ -340,8 +386,6 @@ function files_verify(files_system,
                 if(a[i] == "wget") G["wget"] = "false"
                 if(a[i] == "curl") G["curl"] = "false"
                 if(a[i] == "lynx") G["lynx"] = "false"
-#                missing++
-#                print "Abort: command not found in PATH: " a[i]
             }
             else if(a[i] == "wget") G["wget"] = "true"
             else if(a[i] == "curl") G["curl"] = "true"
@@ -367,7 +411,7 @@ function files_verify(files_system,
 #
 # User Category list main
 #
-function category(entity) {
+function category(entity,   ct) {
 
         # MediaWiki API:Categorymembers
         #  https://www.mediawiki.org/wiki/API:Categorymembers
@@ -375,7 +419,16 @@ function category(entity) {
         if(entity !~ /^[Cc]ategory[:]/)
           entity = "Category:" entity
 
-        url = "https://" G["lang"] ".wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle=" urlencodeawk(entity) "&cmtype=page&cmprop=title&cmlimit=500&format=xml&maxlag=" G["maxlag"]
+        if(G["cattypes"] ~ /p/)
+          ct = ct " page"
+        if(G["cattypes"] ~ /s/)
+          ct = ct " subcat"
+        if(G["cattypes"] ~ /f/)
+          ct = ct " file"
+        ct = strip(ct)
+        gsub(/[ ]/,"|",ct)
+ 
+        url = "https://" G["lang"] ".wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle=" urlencodeawk(entity) "&cmtype=" urlencodeawk(ct) "&cmprop=title&cmlimit=500&format=xml&maxlag=" G["maxlag"]
 
         results = getcategory(url, entity)
 
@@ -442,7 +495,7 @@ function ucontribs(entity,sdate,edate,      url, results) {
         if(entity !~ /^[Uu]ser[:]/)
           entity = "User:" entity
 
-        url = "https://" G["lang"] ".wikipedia.org/w/api.php?action=query&list=usercontribs&ucuser=" urlencodeawk(entity) "&uclimit=500&ucstart=" sdate "&ucend=" edate "&ucdir=newer&ucnamespace=" G["namespace"] "&ucprop=title|parsedcomment&format=xml&maxlag=" G["maxlag"]
+        url = "https://" G["lang"] ".wikipedia.org/w/api.php?action=query&list=usercontribs&ucuser=" urlencodeawk(entity) "&uclimit=500&ucstart=" urlencodeawk(sdate) "&ucend=" urlencodeawk(edate) "&ucdir=newer&ucnamespace=" G["namespace"] "&ucprop=" urlencodeawk("title|parsedcomment") "&format=xml&maxlag=" G["maxlag"]
 
         results = getucontribs(url, entity, sdate, edate) 
 
@@ -458,7 +511,7 @@ function getucontribs(url, entity, sdate, edate,         xmlin, xmlout, continue
         continuecode = getcontinueuc(xmlin)
 
         while ( continuecode ) {
-            url = "https://" G["lang"] ".wikipedia.org/w/api.php?action=query&list=usercontribs&ucuser=" urlencodeawk(entity) "&uclimit=500&continue=-||&uccontinue=" continuecode "&ucstart=" sdate "&ucend=" edate "&ucdir=newer&ucnamespace=" G["namespace"] "&ucprop=title|parsedcomment&format=xml&maxlag=" G["maxlag"]
+            url = "https://" G["lang"] ".wikipedia.org/w/api.php?action=query&list=usercontribs&ucuser=" urlencodeawk(entity) "&uclimit=500&continue=" urlencodeawk("-||") "&uccontinue=" urlencodeawk(continuecode) "&ucstart=" urlencodeawk(sdate) "&ucend=" urlencodeawk(edate) "&ucdir=newer&ucnamespace=" G["namespace"] "&ucprop=" urlencodeawk("title|parsedcomment") "&format=xml&maxlag=" G["maxlag"]
             xmlin = http2var(url)
             xmlout = xmlout "\n" parsexmlucon(xmlin)
             continuecode = getcontinueuc(xmlin)
@@ -515,15 +568,23 @@ function backlinks(entity,      url, blinks) {
         # MediaWiki API:Backlinks
         #  https://www.mediawiki.org/wiki/API:Backlinks
 
-        url = "https://" G["lang"] ".wikipedia.org/w/api.php?action=query&list=backlinks&bltitle=" urlencodeawk(entity) "&blredirect&bllimit=250&continue=&blfilterredir=nonredirects&format=json&utf8=1&maxlag=" G["maxlag"]
-        blinks = getbacklinks(url, entity, "blcontinue") # normal backlinks
+        if(G["bltypes"] ~ /n/) {
+          url = "https://" G["lang"] ".wikipedia.org/w/api.php?action=query&list=backlinks&bltitle=" urlencodeawk(entity) "&blredirect&bllimit=250&continue=&blfilterredir=nonredirects&format=json&utf8=1&maxlag=" G["maxlag"]
+          blinks = getbacklinks(url, entity, "blcontinue") # normal backlinks
+        }
 
-        if ( entity ~ "^Template:") {    # transclusion backlinks
+        if ( entity ~ /^[Tt]emplate[:]/ && G["bltypes"] ~ /t/) {    # transclusion backlinks
             url = "https://" G["lang"] ".wikipedia.org/w/api.php?action=query&list=embeddedin&eititle=" urlencodeawk(entity) "&continue=&eilimit=500&format=json&utf8=1&maxlag=" G["maxlag"]
-            blinks = blinks "\n" getbacklinks(url, entity, "eicontinue")
-        } else if ( entity ~ "^File:") { # file backlinks
+            if(length(blinks) > 0)
+              blinks = blinks "\n" getbacklinks(url, entity, "eicontinue")
+            else
+              blinks = getbacklinks(url, entity, "eicontinue")
+        } else if ( entity ~ /^[Ff]ile[:]/ && G["bltypes"] ~ /f/) { # file backlinks
             url = "https://" G["lang"] ".wikipedia.org/w/api.php?action=query&list=imageusage&iutitle=" urlencodeawk(entity) "&iuredirect&iulimit=250&continue=&iufilterredir=nonredirects&format=json&utf8=1&maxlag=" G["maxlag"]
-            blinks = blinks "\n" getbacklinks(url, entity, "iucontinue")
+            if(length(blinks) > 0)
+              blinks = blinks "\n" getbacklinks(url, entity, "iucontinue")
+            else
+              blinks = getbacklinks(url, entity, "iucontinue")
         }
 
         blinks = uniq(blinks)
@@ -542,11 +603,11 @@ function getbacklinks(url, entity, method,      jsonin, jsonout, continuecode) {
         while ( continuecode ) {
 
             if ( method == "eicontinue" )
-                url = "https://" G["lang"] ".wikipedia.org/w/api.php?action=query&list=embeddedin&eititle=" urlencodeawk(entity) "&eilimit=500&continue=-||&eicontinue=" continuecode "&format=json&utf8=1&maxlag=" G["maxlag"]
+                url = "https://" G["lang"] ".wikipedia.org/w/api.php?action=query&list=embeddedin&eititle=" urlencodeawk(entity) "&eilimit=500&continue=" urlencodeawk("-||") "&eicontinue=" urlencodeawk(continuecode) "&format=json&utf8=1&maxlag=" G["maxlag"]
             if ( method == "iucontinue" )
-                url = "https://" G["lang"] ".wikipedia.org/w/api.php?action=query&list=imageusage&iutitle=" urlencodeawk(entity) "&iuredirect&iulimit=250&continue=&iufilterredir=nonredirects&format=json&utf8=1&maxlag=" G["maxlag"]
+                url = "https://" G["lang"] ".wikipedia.org/w/api.php?action=query&list=imageusage&iutitle=" urlencodeawk(entity) "&iuredirect&iulimit=250&continue=" urlencodeawk("-||") "&iucontinue=" urlencodeawk(continuecode) "&iufilterredir=nonredirects&format=json&utf8=1&maxlag=" G["maxlag"]
             if ( method == "blcontinue" )
-                url = "https://" G["lang"] ".wikipedia.org/w/api.php?action=query&list=backlinks&bltitle=" urlencodeawk(entity) "&blredirect&bllimit=250&continue=-||&blcontinue=" continuecode "&blfilterredir=nonredirects&format=json&utf8=1&maxlag=" G["maxlag"]
+                url = "https://" G["lang"] ".wikipedia.org/w/api.php?action=query&list=backlinks&bltitle=" urlencodeawk(entity) "&blredirect&bllimit=250&continue=" urlencodeawk("-||") "&blcontinue=" urlencodeawk(continuecode) "&blfilterredir=nonredirects&format=json&utf8=1&maxlag=" G["maxlag"]
 
             jsonin = http2var(url)
             jsonout = jsonout "\n" json2var(jsonin)
@@ -573,13 +634,12 @@ function getcontinuebl(jsonin, method     ,re,a,b,c) {
 #
 # Print wiki text (-w) with the plain text option (-p)
 #
-function wikitextplain(namewiki,   urlencoded,command,f,r,redirurl,xml,i,c,b,k) {
+function wikitextplain(namewiki,   command,f,r,redirurl,xml,i,c,b,k) {
 
   # MediaWiki API Extension:TextExtracts
   #  https://www.mediawiki.org/wiki/Extension:TextExtracts
 
-  urlencoded = urlencodeawk(strip(namewiki))
-  command = "https://" G["lang"] ".wikipedia.org/w/index.php?title=" urlencoded "&action=raw"
+  command = "https://" G["lang"] ".wikipedia.org/w/index.php?title=" urlencodeawk(strip(namewiki)) "&action=raw"
   f = http2var(command)
   if(length(f) < 5) 
     return ""
@@ -607,10 +667,9 @@ function wikitextplain(namewiki,   urlencoded,command,f,r,redirurl,xml,i,c,b,k) 
   }
 }
 
-function wikitext(namewiki,   urlencoded,command,f,r,redirurl) {
+function wikitext(namewiki,   command,f,r,redirurl) {
 
-  urlencoded = urlencodeawk(strip(namewiki))
-  command = "https://" G["lang"] ".wikipedia.org/w/index.php?title=" urlencoded "&action=raw"
+  command = "https://" G["lang"] ".wikipedia.org/w/index.php?title=" urlencodeawk(strip(namewiki)) "&action=raw"
   f = http2var(command)
   if(length(f) < 5) 
     return ""
@@ -655,11 +714,11 @@ function sys2var(command        ,catch, weight, ship) {
 function http2var(url) {
 
         if(G["wta"] == "wget")
-          return sys2var("wget --no-check-certificate --user-agent=\"" G["agent"] "\" -q -O- -- \"" url "\"")
+          return sys2var("wget --no-check-certificate --user-agent=\"" G["agent"] "\" -q -O- -- " shquote(url) )
         else if(G["wta"] == "curl")
-          return sys2var("curl -L -s -k --user-agent \"" G["agent"] "\" -- \"" url "\"")
+          return sys2var("curl -L -s -k --user-agent \"" G["agent"] "\" -- " shquote(url) )
         else if(G["wta"] == "lynx")
-          return sys2var("lynx -source -- \"" url "\"")
+          return sys2var("lynx -source -- " shquote(url) )
 }
 
 #
@@ -681,6 +740,18 @@ function urlencodeawk(str,  c, len, res, i, ord) {
                         res = res "%" sprintf("%02X", ord[c])
         }                 
         return res
+}
+
+# 
+# Make string safe for shell
+#  print shquote("Hello' There")    produces 'Hello'\'' There'              
+#  echo 'Hello'\'' There'           produces Hello' There                 
+# 
+function shquote (str) {
+        safe = str
+        gsub(/'/, "'\\''", safe)
+        gsub(/’/, "'\\’'", safe)
+        return "'" safe "'"
 }
 
 # 
