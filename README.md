@@ -3,8 +3,7 @@ Wikiget
 Wikiget is a Unix command-line tool to retrieve a list of article names from Wikipedia.
 
 When working with AWB or bots on Wikipedia, a list of target article names is often needed. For example all articles in a category, articles that use a 
-template (backlinks), or articles edited by a username (user contributions). The API has this available, but a simple command-line tool saves 
-programming effort.
+template (backlinks), or articles edited by a username (user contributions). Wget provides a simple front-end to commonly used API requests.
 
 
 	Wikiget - command-line access to some Wikimedia API functions
